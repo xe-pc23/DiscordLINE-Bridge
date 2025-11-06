@@ -2,6 +2,8 @@ package main
 
 import (
 	"line-discord-bridge/config"
+	"line-discord-bridge/handlers"
+	"line-discord-bridge/services"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +12,11 @@ import (
 func main() {
 	// 設定読み込み
 	config.LoadConfig()
+
+	// LINE Service初期化
+	if err := services.InitLineService(); err != nil {
+		log.Fatalf("Failed to initialize LINE service: %v", err)
+	}
 
 	// Ginのルーター作成
 	router := gin.Default()
@@ -28,10 +35,15 @@ func main() {
 		})
 	})
 
+	// LINE Webhook エンドポイント
+	// 複数のパターンに対応
+	router.POST("/webhook/line", handlers.LineWebhookHandler)
+	router.POST("/webhook", handlers.LineWebhookHandler)
+	router.POST("/callback", handlers.LineWebhookHandler)
+
 	// サーバー起動
 	port := config.AppConfig.Port
 	log.Printf("Server starting on port %s", port)
-	//起動しなかったときのエラー処理
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
