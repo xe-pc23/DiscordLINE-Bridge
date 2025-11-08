@@ -44,20 +44,30 @@ func LineWebhookHandler(c *gin.Context) {
 }
 
 func handleLineMessage(event webhook.MessageEvent) {
+	// ユーザーIDを保存（Discordからの返信用）
+	if event.Source != nil {
+		switch source := event.Source.(type) {
+		case webhook.UserSource:
+			services.LineServiceInstance.SetLastUserID(source.UserId)
+		}
+	}
+
 	// メッセージタイプを確認
 	switch message := event.Message.(type) {
 	case webhook.TextMessageContent:
 		log.Printf("Received LINE message: %s", message.Text)
 
-		// TODO: Phase 3でDiscordに転送する処理を追加
-
-		// とりあえずエコーバック（テスト用）
-		if event.ReplyToken != "" {
-			err := services.LineServiceInstance.SendMessage(event.ReplyToken, message.Text)
+		// Discordに転送
+		if services.DiscordServiceInstance != nil {
+			err := services.DiscordServiceInstance.SendDM(
+				config.AppConfig.DiscordUserID,
+				message.Text,
+			)
 			if err != nil {
-				log.Printf("Failed to reply: %v", err)
+				log.Printf("Failed to forward to Discord: %v", err)
 			}
 		}
+
 	default:
 		log.Printf("Unsupported message type: %T", message)
 	}

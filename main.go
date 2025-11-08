@@ -18,6 +18,12 @@ func main() {
 		log.Fatalf("Failed to initialize LINE service: %v", err)
 	}
 
+	// Discord Service初期化
+	if err := services.InitDiscordService(); err != nil {
+		log.Fatalf("Failed to initialize Discord service: %v", err)
+	}
+	defer services.DiscordServiceInstance.Close()
+
 	// Ginのルーター作成
 	router := gin.Default()
 
