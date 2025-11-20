@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"line-discord-bridge/config"
 	"line-discord-bridge/services"
 	"log"
@@ -44,11 +45,13 @@ func LineWebhookHandler(c *gin.Context) {
 }
 
 func handleLineMessage(event webhook.MessageEvent) {
+	var userID string
 	// ユーザーIDを保存（Discordからの返信用）
 	if event.Source != nil {
 		switch source := event.Source.(type) {
 		case webhook.UserSource:
-			services.LineServiceInstance.SetLastUserID(source.UserId)
+			userID = source.UserId
+			services.LineServiceInstance.SetLastUserID(userID)
 		}
 	}
 
@@ -66,6 +69,27 @@ func handleLineMessage(event webhook.MessageEvent) {
 			if err != nil {
 				log.Printf("Failed to forward to Discord: %v", err)
 			}
+		}
+
+		// Gemini分析（非同期）
+		if services.GeminiServiceInstance != nil {
+			services.GeminiServiceInstance.AddMessage("LINE", message.Text)
+			go func() {
+				ctx := context.Background()
+				advice, err := services.GeminiServiceInstance.AnalyzeChat(ctx)
+				if err != nil {
+					log.Printf("Gemini analysis failed: %v", err)
+					return
+				}
+
+				if advice.ShouldAdvise {
+					// Discordユーザーへのアドバイス
+					if advice.AdviceForDiscord != "" {
+						msg := "＋＋＋＋＋＋\n" + advice.AdviceForDiscord + "\n＋＋＋＋＋＋"
+						services.DiscordServiceInstance.SendDM(config.AppConfig.DiscordUserID, msg)
+					}
+				}
+			}()
 		}
 
 	default:

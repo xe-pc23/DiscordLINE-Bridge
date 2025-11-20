@@ -13,6 +13,7 @@ type Config struct {
 	LineChannelAccessToken string
 	DiscordBotToken        string
 	DiscordUserID          string
+	GeminiAPIKey           string
 }
 
 var AppConfig *Config
@@ -30,6 +31,7 @@ func LoadConfig() {
 		LineChannelAccessToken: getEnv("LINE_CHANNEL_ACCESS_TOKEN", ""),
 		DiscordBotToken:        getEnv("DISCORD_BOT_TOKEN", ""),
 		DiscordUserID:          getEnv("DISCORD_USER_ID", ""),
+		GeminiAPIKey:           getEnv("GEMINI_API_KEY", ""),
 	}
 
 }

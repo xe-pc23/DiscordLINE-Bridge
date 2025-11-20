@@ -24,6 +24,17 @@ func main() {
 	}
 	defer services.DiscordServiceInstance.Close()
 
+	// Gemini Service初期化
+	if config.AppConfig.GeminiAPIKey != "" {
+		if err := services.InitGeminiService(); err != nil {
+			log.Printf("Failed to initialize Gemini service: %v", err)
+		} else {
+			defer services.GeminiServiceInstance.Close()
+		}
+	} else {
+		log.Println("Gemini API Key not found, skipping Gemini service initialization")
+	}
+
 	// Ginのルーター作成
 	router := gin.Default()
 

@@ -100,4 +100,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			log.Println("No LINE user to forward message to")
 		}
 	}
+
+	// Geminiへのメッセージ追加のみ行う（分析はLINE返信時のみ）
+	if GeminiServiceInstance != nil {
+		GeminiServiceInstance.AddMessage("Discord", m.Content)
+	}
 }
